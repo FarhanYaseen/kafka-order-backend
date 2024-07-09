@@ -1,5 +1,4 @@
 const { Kafka, Partitioners, logLevel } = require("kafkajs");
-const { faker } = require("@faker-js/faker");
 
 const kafka = new Kafka({
   clientId: "order-app",
@@ -28,22 +27,4 @@ const sendOrder = async (order) => {
   }
 };
 
-const generateRandomOrder = () => {
-  return {
-    orderId: faker.datatype.uuid(),
-    customerName: faker.name.fullName(),
-    items: Array.from(
-      { length: faker.datatype.number({ min: 1, max: 5 }) },
-      () => faker.commerce.productName()
-    ),
-    total: faker.commerce.price(),
-    orderTime: new Date().toLocaleString(),
-  };
-};
-
-const run = async () => {
-  const order = generateRandomOrder();
-  await sendOrder(order);
-};
-
-run().catch(console.error);
+module.exports = { sendOrder };
