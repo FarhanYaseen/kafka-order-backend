@@ -13,7 +13,7 @@ This repository contains an example of an order processing system using KafkaJS 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/order-processing-kafka-js.git
+   git clone https://github.com/FarhanYaseen/order-processing-kafka-js.git
    cd order-processing-kafka-js
    ```
 
