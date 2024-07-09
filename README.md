@@ -39,10 +39,10 @@ This project includes a `docker-compose.yml` file to set up Kafka and Zookeeper.
 
 ## Running the Producer
 
-To start the producer and send a randomly generated order to the Kafka topic:
+To start the express server which listen for incoming message and producer send a order to the Kafka topic:
 
 ```bash
-node orderProducer.js
+npm start
 ```
 
 ## Running the Consumer
@@ -50,7 +50,7 @@ To start the consumer and listen for order messages on the Kafka topic:
 
 
 ```bash
-node orderConsumer.js
+npm run start-consumer
 ```
 
 ## Stopping the Services
