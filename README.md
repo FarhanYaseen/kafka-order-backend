@@ -1,61 +1,158 @@
-# Order Processing System with KafkaJS
+# Kafka Order Backend
 
-This repository contains an example of an order processing system using KafkaJS to produce and consume messages in real-time with Apache Kafka.
+A Node.js/Express REST API that publishes orders to Apache Kafka for real-time event-driven processing.
+
+## Tech Stack
+
+- **Node.js** + **Express** — HTTP API
+- **KafkaJS** — Kafka producer/consumer
+- **Yup** — Request validation
+- **Docker Compose** — Local Kafka + Zookeeper setup
 
 ## Prerequisites
 
-- Node.js installed
-- Docker and Docker Compose installed
-- KafkaJS and Faker library installed
+- Node.js 18+
+- Docker + Docker Compose
 
-## Installation
+## Getting Started
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/FarhanYaseen/order-processing-kafka-js.git
-   cd order-processing-kafka-js
-   ```
-
-2. Install the dependencies:
-   ```bash
-   npm install
-   ```
-
-## Running Kafka and Zookeeper with Docker Compose
-
-This project includes a `docker-compose.yml` file to set up Kafka and Zookeeper.
-
-1. Start the Kafka and Zookeeper services:
-
-   ```bash
-   docker-compose up -d
-   ```
-
-2. Verify that the services are running:
-   ```bash
-   docker-compose ps
-   ```
-
-## Running the Producer
-
-To start the express server which listen for incoming message and producer send a order to the Kafka topic:
+### 1. Clone and install
 
 ```bash
+git clone https://github.com/FarhanYaseen/order-processing-kafka-js.git
+cd kafka-order-backend
+npm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | HTTP server port |
+| `KAFKA_BROKERS` | `localhost:29092` | Comma-separated Kafka broker addresses |
+| `KAFKA_CLIENT_ID` | `order-app` | Kafka client identifier |
+| `KAFKA_TOPIC` | `orders` | Topic to publish/consume orders |
+| `KAFKA_GROUP_ID` | `order-group` | Consumer group ID |
+| `CORS_ORIGIN` | `http://localhost:3001` | Allowed CORS origin |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate limit window in ms |
+| `RATE_LIMIT_MAX` | `100` | Max requests per window |
+
+### 3. Start Kafka and Zookeeper
+
+```bash
+docker-compose up -d
+```
+
+Verify services are healthy:
+
+```bash
+docker-compose ps
+```
+
+### 4. Start the API server
+
+```bash
+# Production
 npm start
+
+# Development (auto-reload)
+npm run dev
 ```
 
-## Running the Consumer
-To start the consumer and listen for order messages on the Kafka topic:
-
+### 5. Start the consumer
 
 ```bash
+# Production
 npm run start-consumer
+
+# Development (auto-reload)
+npm run dev:consumer
 ```
 
-## Stopping the Services
-To stop the Kafka and Zookeeper services, run:
+## API Reference
 
+### Health Check
+
+```
+GET /health
+```
+
+**Response:**
+```json
+{ "status": "ok", "timestamp": "2024-01-01T00:00:00.000Z" }
+```
+
+---
+
+### Submit Order
+
+```
+POST /api/v1/order
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "customerName": "Jane Doe",
+  "items": "Laptop, Mouse",
+  "total": 1299.99
+}
+```
+
+**Responses:**
+
+| Status | Description |
+|---|---|
+| `202 Accepted` | Order accepted and published to Kafka |
+| `400 Bad Request` | Validation failed — `details` array lists all errors |
+| `429 Too Many Requests` | Rate limit exceeded |
+| `500 Internal Server Error` | Kafka publish failed |
+
+**Success (202):**
+```json
+{
+  "message": "Order accepted",
+  "order": {
+    "customerName": "Jane Doe",
+    "items": "Laptop, Mouse",
+    "total": 1299.99
+  }
+}
+```
+
+**Validation error (400):**
+```json
+{
+  "error": "Validation failed",
+  "details": ["customerName is a required field"]
+}
+```
+
+## Project Structure
+
+```
+kafka-order-backend/
+├── src/
+│   ├── app.js                  # Express server, routes, middleware
+│   ├── kafka/
+│   │   ├── orderProducer.js    # Singleton Kafka producer
+│   │   └── orderConsumer.js    # Kafka consumer with graceful shutdown
+│   ├── utils/
+│   │   └── orderGenerator.js   # Faker-based mock order generator
+│   └── validations/
+│       └── order.js            # Yup validation schema
+├── docker-compose.yml          # Zookeeper + Kafka with healthchecks
+├── .env.example                # Environment variable template
+└── package.json
+```
+
+## Stopping Services
 
 ```bash
 docker-compose down

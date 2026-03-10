@@ -1,30 +1,38 @@
 const { Kafka, Partitioners, logLevel } = require("kafkajs");
 
 const kafka = new Kafka({
-  clientId: "order-app",
-  brokers: ["localhost:29092"],
+  clientId: process.env.KAFKA_CLIENT_ID || "order-app",
+  brokers: (process.env.KAFKA_BROKERS || "localhost:29092").split(","),
   createPartitioner: Partitioners.LegacyPartitioner,
-  logLevel: logLevel.DEBUG,
+  logLevel: logLevel.WARN,
 });
 
 const producer = kafka.producer();
+let isConnected = false;
 
-const sendOrder = async (order) => {
-  try {
+const connectProducer = async () => {
+  if (!isConnected) {
     await producer.connect();
-    console.log("Connected to Kafka broker");
-
-    await producer.send({
-      topic: "orders",
-      messages: [{ value: JSON.stringify(order) }],
-    });
-    console.log("Order sent:", order);
-  } catch (error) {
-    console.error("Failed to send order:", error);
-  } finally {
-    await producer.disconnect();
-    console.log("Disconnected from Kafka broker");
+    isConnected = true;
+    console.log("Kafka producer connected");
   }
 };
 
-module.exports = { sendOrder };
+const disconnectProducer = async () => {
+  if (isConnected) {
+    await producer.disconnect();
+    isConnected = false;
+    console.log("Kafka producer disconnected");
+  }
+};
+
+const sendOrder = async (order) => {
+  await connectProducer();
+  await producer.send({
+    topic: process.env.KAFKA_TOPIC || "orders",
+    messages: [{ value: JSON.stringify(order) }],
+  });
+  console.log("Order sent to Kafka:", order.orderId || order.customerName);
+};
+
+module.exports = { sendOrder, connectProducer, disconnectProducer };
